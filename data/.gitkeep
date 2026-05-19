@@ -1,0 +1,2 @@
+# Local data lives here (gitignored). Production artifacts live on Modal Volume.
+# Hydrate via: uv run python data_pipeline/hydrate_volume.py --local
