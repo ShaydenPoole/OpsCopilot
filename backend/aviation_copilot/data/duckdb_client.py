@@ -130,7 +130,9 @@ class DuckDBClient:
         # `flights.total_flights > 0` guarantees `row` is not None (zero-row results
         # produce `total_flights == 0` via _row_to_flight_summary's None branch).
         by_cause = (
-            _row_to_delay_cause_summary(row) if (flights.total_flights > 0 and row is not None) else None
+            _row_to_delay_cause_summary(row)
+            if (flights.total_flights > 0 and row is not None)
+            else None
         )
 
         return RouteSummary(
