@@ -100,6 +100,11 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["S", "B011"]
+# Pydantic-AI's idiomatic tool signature uses `Field(...)` in argument defaults
+# (e.g. `icao: str = Field(description=...)`) so the LLM tool schema can include
+# parameter descriptions and defaults. B008 (Do not perform function call in
+# argument defaults) is the wrong rule for this pattern.
+"aviation_copilot/tools/**/*.py" = ["B008"]
 
 [tool.ruff.format]
 quote-style = "double"
