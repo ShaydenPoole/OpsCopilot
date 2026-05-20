@@ -1,0 +1,125 @@
+name: eval-full
+
+# The full Inspect AI eval suite on every push to main that touches agent
+# behaviour. Writes evals/results/latest.json (the README badge source) and
+# the eval-results table SVG back to the repo.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/aviation_copilot/agent/**'
+      - 'backend/aviation_copilot/tools/**'
+      - 'backend/aviation_copilot/corpus/**'
+      - 'evals/**'
+      - 'data_pipeline/**'
+      - '.github/workflows/eval-full.yml'
+      - '.github/actions/eval-budget-guard/**'
+
+concurrency:
+  group: eval-full
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  full:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check eval prerequisites
+        id: pre
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          if [ -z "${OPENROUTER_API_KEY}" ]; then
+            echo "::warning title=eval-full skipped::OPENROUTER_API_KEY is not set. Add it as a repo secret to enable the full eval suite."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Eval budget guard
+        id: budget
+        if: steps.pre.outputs.ready == 'true'
+        uses: ./.github/actions/eval-budget-guard
+
+      - name: Install uv
+        if: steps.pre.outputs.ready == 'true' && steps.budget.outputs.allowed == 'true'
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Sync dependencies
+        if: steps.pre.outputs.ready == 'true' && steps.budget.outputs.allowed == 'true'
+        working-directory: backend
+        run: uv sync --all-extras
+
+      - name: Restore eval data
+        if: steps.pre.outputs.ready == 'true' && steps.budget.outputs.allowed == 'true'
+        env:
+          EVAL_DATA_URL: ${{ vars.EVAL_DATA_URL }}
+        run: bash .github/scripts/restore-eval-data.sh
+
+      - name: Run full eval suite
+        if: steps.pre.outputs.ready == 'true' && steps.budget.outputs.allowed == 'true'
+        working-directory: backend
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/backend
+        run: |
+          uv run inspect eval ../evals/run_eval.py@aviation_ops_copilot_eval \
+            --model openrouter/openai/gpt-oss-120b \
+            --log-dir ../evals/results/full
+          uv run python ../evals/summarize.py ../evals/results/full \
+            --json-out ../evals/results/latest.json
+
+      - name: Generate README eval table
+        if: steps.pre.outputs.ready == 'true' && steps.budget.outputs.allowed == 'true'
+        working-directory: backend
+        run: |
+          if [ -f ../scripts/generate_eval_table.py ]; then
+            uv run python ../scripts/generate_eval_table.py \
+              ../evals/results/latest.json ../docs/images/eval-results-table.svg
+          else
+            echo "scripts/generate_eval_table.py not present yet (lands in U12) — skipping."
+          fi
+
+      - name: Record eval spend
+        if: steps.pre.outputs.ready == 'true' && steps.budget.outputs.allowed == 'true'
+        env:
+          EVAL_RUN_COST_ESTIMATE: ${{ vars.EVAL_RUN_COST_ESTIMATE }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          path = "evals/budget.json"
+          budget = json.load(open(path, encoding="utf-8"))
+          month = datetime.now(timezone.utc).strftime("%Y-%m")
+          # Reset spend at the month boundary.
+          spent = 0.0 if budget.get("month") != month else float(budget.get("spent_usd", 0.0))
+          estimate = float(os.environ.get("EVAL_RUN_COST_ESTIMATE") or "0.50")
+          budget["month"] = month
+          budget["spent_usd"] = round(spent + estimate, 4)
+          json.dump(budget, open(path, "w", encoding="utf-8"), indent=2)
+          open(path, "a", encoding="utf-8").write("\n")
+          print(f"Recorded ${estimate:.2f} — month-to-date now ${budget['spent_usd']:.2f}.")
+          PY
+
+      - name: Commit results back to main
+        if: steps.pre.outputs.ready == 'true' && steps.budget.outputs.allowed == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add evals/results/latest.json evals/budget.json
+          [ -f docs/images/eval-results-table.svg ] && git add docs/images/eval-results-table.svg
+          # `[skip ci]` stops this bot commit from re-triggering the eval workflows.
+          git diff --cached --quiet || git commit -m "chore(evals): refresh results from CI [skip ci]"
+          # checkout@v4 leaves a detached HEAD on push events — push explicitly to main.
+          git push origin HEAD:main
+
+      - name: Budget-exceeded notice
+        if: steps.pre.outputs.ready == 'true' && steps.budget.outputs.allowed != 'true'
+        run: echo "::warning title=eval-full skipped::Monthly eval budget exceeded — see evals/budget.json."

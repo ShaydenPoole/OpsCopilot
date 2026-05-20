@@ -1,0 +1,10 @@
+{"query": "What is required for VFR flight into Class B airspace?", "expected_any_source": ["aim_chap3"]}
+{"query": "Define minimum vectoring altitude (MVA).", "expected_any_source": ["aim_chap5", "aim_chap4"]}
+{"query": "What information does a METAR report contain?", "expected_any_source": ["aim_chap7"]}
+{"query": "How are NOTAMs categorized and disseminated?", "expected_any_source": ["aim_chap5"]}
+{"query": "Describe the standard instrument approach procedure phases.", "expected_any_source": ["aim_chap5"]}
+{"query": "What is the function of ATIS?", "expected_any_source": ["aim_chap4"]}
+{"query": "When should pilots request a contact approach?", "expected_any_source": ["aim_chap5"]}
+{"query": "What are the requirements for radio communications failure in IFR?", "expected_any_source": ["aim_chap6"]}
+{"query": "Explain wake turbulence avoidance procedures.", "expected_any_source": ["aim_chap7"]}
+{"query": "Describe the visual flight rules (VFR) cruising altitudes.", "expected_any_source": ["aim_chap3"]}

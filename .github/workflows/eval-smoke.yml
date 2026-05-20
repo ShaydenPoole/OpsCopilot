@@ -1,0 +1,91 @@
+name: eval-smoke
+
+# A ~12-question Inspect AI smoke eval on PRs that touch agent behaviour.
+# Scoped with `paths:` so doc-only / frontend-only PRs never spend eval budget.
+#
+# Trigger is `pull_request` (NEVER `pull_request_target`): fork PRs cannot read
+# repo secrets, so they skip this job gracefully. The candidate works from
+# branches in the main repo, so their own PRs do get the secret. See docs/deploy.md.
+on:
+  pull_request:
+    paths:
+      - 'backend/aviation_copilot/agent/**'
+      - 'backend/aviation_copilot/tools/**'
+      - 'backend/aviation_copilot/corpus/**'
+      - 'evals/**'
+      - 'data_pipeline/**'
+      - '.github/workflows/eval-smoke.yml'
+      - '.github/actions/eval-budget-guard/**'
+
+concurrency:
+  group: eval-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check eval prerequisites
+        id: pre
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          if [ -z "${OPENROUTER_API_KEY}" ]; then
+            echo "::notice title=eval-smoke skipped::OPENROUTER_API_KEY unavailable (fork PR, or secret unset). Push to a branch in the main repo to run smoke evals."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Eval budget guard
+        id: budget
+        if: steps.pre.outputs.ready == 'true'
+        uses: ./.github/actions/eval-budget-guard
+
+      - name: Install uv
+        if: steps.pre.outputs.ready == 'true' && steps.budget.outputs.allowed == 'true'
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Sync dependencies
+        if: steps.pre.outputs.ready == 'true' && steps.budget.outputs.allowed == 'true'
+        working-directory: backend
+        run: uv sync --all-extras
+
+      - name: Restore eval data
+        if: steps.pre.outputs.ready == 'true' && steps.budget.outputs.allowed == 'true'
+        env:
+          EVAL_DATA_URL: ${{ vars.EVAL_DATA_URL }}
+        run: bash .github/scripts/restore-eval-data.sh
+
+      - name: Run smoke evals
+        if: steps.pre.outputs.ready == 'true' && steps.budget.outputs.allowed == 'true'
+        working-directory: backend
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/backend
+        run: |
+          uv run inspect eval ../evals/run_eval.py@aviation_ops_copilot_smoke \
+            --model openrouter/openai/gpt-oss-120b \
+            --log-dir ../evals/results/smoke
+          uv run python ../evals/summarize.py ../evals/results/smoke \
+            --json-out ../evals/results/smoke-latest.json \
+            --md-out ../evals/results/smoke-summary.md
+
+      - name: Comment results on the PR
+        if: steps.pre.outputs.ready == 'true' && steps.budget.outputs.allowed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr comment "${{ github.event.pull_request.number }}" --body-file evals/results/smoke-summary.md
+
+      - name: Budget-exceeded notice
+        if: steps.pre.outputs.ready == 'true' && steps.budget.outputs.allowed != 'true'
+        run: echo "::warning title=eval-smoke skipped::Monthly eval budget exceeded — see evals/budget.json. Backend and frontend CI are unaffected."

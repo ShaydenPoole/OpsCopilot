@@ -1,0 +1,9 @@
+# Synthesis: the architectural differentiator.
+# Agent must reconcile signals across tools where they plausibly disagree.
+# Rubric explicitly scores: (a) acknowledged multi-source signals, (b) weighed
+# them rather than picking one, (c) cited per-tool provenance.
+{"id": "synth-001", "question": "Is today's IFR forecast for KORD unusual relative to typical October patterns at this hour?", "expected_tools": ["weather_lookup", "flight_data_query", "corpus_search"], "rubric_focus": "reconciles live weather + historical patterns + procedural context"}
+{"id": "synth-002", "question": "Given current METAR and active NOTAMs for KSFO, what's a reasonable arrival-delay expectation?", "expected_tools": ["weather_lookup", "notam_lookup", "flight_data_query"], "rubric_focus": "synthesizes three signals into one operational estimate"}
+{"id": "synth-003", "question": "The METAR says VMC but the 30-day historical pattern shows persistent morning IFR at KSEA - which signal would an ops controller weight more right now?", "expected_tools": ["weather_lookup", "flight_data_query"], "rubric_focus": "deliberate conflict; agent must NOT pick one and ignore the other"}
+{"id": "synth-004", "question": "Does today's NOTAM activity at KJFK align with the operational patterns the AIM describes for runway closures, or is something unusual happening?", "expected_tools": ["notam_lookup", "corpus_search", "flight_data_query"], "rubric_focus": "compares observed NOTAMs to AIM-defined norms and historical baseline"}
+{"id": "synth-005", "question": "Compare current conditions at three west-coast hubs - KSFO, KSEA, KLAX - and call out which has the most operationally concerning combination of weather and NOTAMs right now.", "expected_tools": ["weather_lookup", "notam_lookup"], "rubric_focus": "multi-airport synthesis; ranks airports with explicit criteria"}

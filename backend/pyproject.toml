@@ -1,0 +1,172 @@
+[project]
+name = "aviation-copilot"
+version = "0.1.0"
+description = "Aviation operations LLM agent — tool-using, evaluated, observable"
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+license = { text = "MIT" }
+authors = [{ name = "Shayden Poole" }]
+
+dependencies = [
+    # Agent + LLM
+    "pydantic-ai>=0.0.20",
+    "pydantic>=2.10",
+    "pydantic-settings>=2.7",
+
+    # API
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "httpx>=0.27",
+    "sse-starlette>=2.1",
+
+    # Data
+    "duckdb>=1.1",
+    "lancedb>=0.16",
+    "pyarrow>=18.0",
+
+    # Embeddings
+    "sentence-transformers>=3.3",
+
+    # Observability
+    "langfuse>=2.55",
+
+    # Document parsing for AIM
+    "trafilatura>=1.12",
+    "beautifulsoup4>=4.12",
+
+    # Utilities
+    "python-dotenv>=1.0",
+    "structlog>=24.4",
+    "tenacity>=9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.13",
+    "mypy>=1.18",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-httpx>=0.32",
+    "pytest-cov>=6.0",
+    "pytest-recording>=0.13",
+    "respx>=0.21",
+]
+eval = [
+    "inspect-ai>=0.3",
+]
+deploy = [
+    "modal>=0.66",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["aviation_copilot"]
+
+# Flat layout (`aviation_copilot/` at backend root, not under `src/`) means the
+# package imports without needing a wheel build. `package = false` tells uv to
+# skip the local-project build step that Windows Smart App Control / WDAC blocks.
+# Production (Modal / CI on Linux) does its own install where packaging works.
+[tool.uv]
+package = false
+
+# ----------------------------------------------------------------------------
+# Ruff (lint + format)
+# ----------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["aviation_copilot", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "S",   # flake8-bandit (security)
+    "SIM", # flake8-simplify
+    "RUF", # ruff-specific
+]
+ignore = [
+    "S101",  # assert in tests is fine
+    "E501",  # line too long — formatter handles this
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S", "B011"]
+# Pydantic-AI's idiomatic tool signature uses `Field(...)` in argument defaults
+# (e.g. `icao: str = Field(description=...)`) so the LLM tool schema can include
+# parameter descriptions and defaults. B008 (Do not perform function call in
+# argument defaults) is the wrong rule for this pattern.
+"aviation_copilot/tools/**/*.py" = ["B008"]
+# Standalone scripts bootstrap sys.path before importing the flat-layout
+# package (the project is `package = false`), so E402 is unavoidable here.
+"scripts/**/*.py" = ["E402"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# ----------------------------------------------------------------------------
+# mypy
+# ----------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = [
+    "duckdb.*",
+    "lancedb.*",
+    "trafilatura.*",
+    "sentence_transformers.*",
+    "langfuse.*",
+]
+ignore_missing_imports = true
+
+# ----------------------------------------------------------------------------
+# pytest
+# ----------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--tb=short",
+]
+markers = [
+    "integration: integration tests (uses recorded LLM responses or local fixtures)",
+    "live: tests that hit real external services (skipped in CI unless explicitly enabled)",
+]
+filterwarnings = [
+    "error",
+    "ignore::DeprecationWarning:pydantic_ai.*",
+    "ignore::DeprecationWarning:langfuse.*",
+]
+
+[tool.coverage.run]
+source = ["aviation_copilot"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = false
+fail_under = 70

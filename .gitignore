@@ -1,0 +1,85 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+build/
+dist/
+*.egg
+.venv/
+venv/
+env/
+
+# uv
+.uv-cache/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+build/
+.turbo/
+*.tsbuildinfo
+.npm/
+.pnpm-store/
+.eslintcache
+
+# Testing
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+backend/tests/integration/cassettes/*.bin
+
+# Environment
+.env
+.env.local
+.env.*.local
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Claude Code — local harness config (settings, worktrees)
+.claude/
+
+# Data and models (local-only; production artifacts live on Modal Volume)
+data/flights.duckdb
+data/corpus_index.lance/
+data/*.parquet
+data/*.csv
+data/raw/
+data/bts_otp/
+data/faa_aim/
+.cache/
+models/
+
+# Modal / Vercel / deploy
+.modal/
+.vercel/
+
+# Eval results — per-run JSON is local-only; latest.json is committed by the
+# eval-full CI workflow as the README badge source.
+evals/results/*.json
+!evals/results/.gitkeep
+!evals/results/latest.json
+
+# Misc
+*.log
+logs/
+tmp/
+.tmp/
