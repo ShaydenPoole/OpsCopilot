@@ -117,7 +117,8 @@ jobs:
           [ -f docs/images/eval-results-table.svg ] && git add docs/images/eval-results-table.svg
           # `[skip ci]` stops this bot commit from re-triggering the eval workflows.
           git diff --cached --quiet || git commit -m "chore(evals): refresh results from CI [skip ci]"
-          git push
+          # checkout@v4 leaves a detached HEAD on push events — push explicitly to main.
+          git push origin HEAD:main
 
       - name: Budget-exceeded notice
         if: steps.pre.outputs.ready == 'true' && steps.budget.outputs.allowed != 'true'

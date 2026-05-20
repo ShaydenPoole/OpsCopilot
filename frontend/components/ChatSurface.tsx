@@ -66,6 +66,11 @@ export function ChatSurface() {
           patchMessage(assistantId, (m) => ({ status: m.status === 'error' ? 'error' : 'complete' })),
       });
 
+      // Safety net: if the stream ended without a terminal `done`/`error`
+      // event, don't leave the message stuck in the streaming state.
+      patchMessage(assistantId, (m) =>
+        m.status === 'streaming' ? { status: 'complete' } : {},
+      );
       setIsStreaming(false);
     },
     [patchMessage],
