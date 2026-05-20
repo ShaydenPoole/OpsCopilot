@@ -55,3 +55,40 @@ jobs:
 
       - name: Eval scorer meta-tests
         run: uv run pytest -c pyproject.toml ../evals/tests
+
+  deploy:
+    # Deploy the agent service to Modal after tests pass on main.
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Modal credentials
+        id: pre
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+        run: |
+          if [ -z "${MODAL_TOKEN_ID}" ]; then
+            echo "::notice title=Modal deploy skipped::MODAL_TOKEN_ID is not set. Add the Modal token secrets to enable auto-deploy (see docs/deploy.md)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install uv
+        if: steps.pre.outputs.ready == 'true'
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Deploy to Modal
+        if: steps.pre.outputs.ready == 'true'
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: uv run --extra deploy modal deploy modal_app.py

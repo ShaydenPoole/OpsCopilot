@@ -1,12 +1,11 @@
-"""Hydrate the Modal Volume (or local data/) with built artifacts.
+"""Pre-flight check for the data artifacts before hydrating the Modal Volume.
 
-When invoked with ``--local`` (or outside Modal), this script just confirms
-both data artifacts exist under ``data/`` and prints their stats.
+Run with ``--local`` to confirm both data artifacts exist under ``data/`` and
+print their stats — do this before uploading them to the volume.
 
-When invoked via Modal (``modal run data_pipeline/hydrate_volume.py``), the
-Modal-specific entry point in U11 wraps this with Volume mount + commit logic.
-
-Lands in skeleton form here (U2/U3). Full Modal integration lands in U11.
+The upload itself is done with the ``modal volume put`` CLI rather than a
+bespoke Modal function (simpler, and nothing to keep in sync). See
+``docs/deploy.md`` → "Hydrate the Modal Volume" for the exact commands.
 """
 
 from __future__ import annotations
@@ -73,15 +72,14 @@ def check_local(data_dir: Path) -> int:
 
 def main() -> int:
     args = parse_args()
-    if args.local:
-        return check_local(args.data_dir)
-    # Full Modal-aware hydration lands in U11. Stub for now.
-    print(
-        "Modal-aware hydration is implemented in U11. For local hydration, "
-        "run with --local.",
-        file=sys.stderr,
-    )
-    return check_local(args.data_dir)
+    result = check_local(args.data_dir)
+    if not args.local and result == 0:
+        print(
+            "\nArtifacts present. Upload them to the Modal Volume with "
+            "`modal volume put` — see docs/deploy.md.",
+            file=sys.stderr,
+        )
+    return result
 
 
 if __name__ == "__main__":
