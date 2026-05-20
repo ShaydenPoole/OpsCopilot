@@ -54,6 +54,9 @@ backend/tests/integration/cassettes/*.bin
 .DS_Store
 Thumbs.db
 
+# Claude Code — local harness config (settings, worktrees)
+.claude/
+
 # Data and models (local-only; production artifacts live on Modal Volume)
 data/flights.duckdb
 data/corpus_index.lance/
@@ -69,9 +72,11 @@ models/
 .modal/
 .vercel/
 
-# Eval results (auto-generated, committed only on main via CI)
+# Eval results — per-run JSON is local-only; latest.json is committed by the
+# eval-full CI workflow as the README badge source.
 evals/results/*.json
 !evals/results/.gitkeep
+!evals/results/latest.json
 
 # Misc
 *.log

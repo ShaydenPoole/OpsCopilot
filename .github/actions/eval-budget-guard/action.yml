@@ -1,0 +1,22 @@
+name: 'Eval budget guard'
+description: >
+  Checks month-to-date CI eval spend in evals/budget.json against the monthly
+  cap. Read-only — eval-full owns the write-back of spend.
+
+outputs:
+  allowed:
+    description: "'true' when running an eval stays within the monthly cap"
+    value: ${{ steps.guard.outputs.allowed }}
+  month_to_date:
+    description: 'USD spent on CI evals so far this month'
+    value: ${{ steps.guard.outputs.month_to_date }}
+  cap:
+    description: 'The configured monthly cap in USD'
+    value: ${{ steps.guard.outputs.cap }}
+
+runs:
+  using: composite
+  steps:
+    - id: guard
+      shell: bash
+      run: python "${{ github.action_path }}/guard.py"

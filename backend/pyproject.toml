@@ -105,6 +105,9 @@ ignore = [
 # parameter descriptions and defaults. B008 (Do not perform function call in
 # argument defaults) is the wrong rule for this pattern.
 "aviation_copilot/tools/**/*.py" = ["B008"]
+# Standalone scripts bootstrap sys.path before importing the flat-layout
+# package (the project is `package = false`), so E402 is unavoidable here.
+"scripts/**/*.py" = ["E402"]
 
 [tool.ruff.format]
 quote-style = "double"
