@@ -1,7 +1,7 @@
 ---
 title: feat: Aviation Ops Copilot — production-grade LLM agent with eval suite
 type: feat
-status: active
+status: completed
 date: 2026-05-19
 origin: docs/brainstorms/aviation-ops-copilot-requirements.md
 ---
