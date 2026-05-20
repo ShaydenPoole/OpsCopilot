@@ -155,6 +155,7 @@ async def query(request: Request, body: QueryRequest) -> Response:
             deps=deps,
             today_iso=body.today_iso,
             settings=state.settings,
+            observer=getattr(state, "observer", None),
         )
         # Emit one `step` event per trace step.
         for step in result.trace.steps:

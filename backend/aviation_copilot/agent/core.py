@@ -26,6 +26,7 @@ from aviation_copilot.agent.errors import AgentError, MaxStepsExceededError, Too
 from aviation_copilot.agent.prompts import AVIATION_OPS_SYSTEM_PROMPT, render_question_with_context
 from aviation_copilot.agent.trace import Trace
 from aviation_copilot.config import Settings, get_settings
+from aviation_copilot.observability import AgentObserver, get_observer
 
 if TYPE_CHECKING:
     from aviation_copilot.corpus.index import CorpusIndex
@@ -181,6 +182,7 @@ async def run_with_trace(
     deps: AgentDeps | None = None,
     today_iso: str | None = None,
     settings: Settings | None = None,
+    observer: AgentObserver | None = None,
 ) -> AgentResult:
     """Execute the agent on ``question`` and return answer + structured trace.
 
@@ -188,6 +190,11 @@ async def run_with_trace(
     completion) and by tools (during their execution). On internal failure,
     returns a graceful AgentResult with a sanitized message and an error kind
     rather than raising.
+
+    The completed run is exported to the observability backend (U8). Exporting
+    happens after the run finishes and never raises, so a Langfuse outage
+    cannot affect the answer. ``observer`` defaults to the process-wide
+    :func:`~aviation_copilot.observability.get_observer`.
     """
     settings = settings or get_settings()
     if agent is None:
@@ -195,6 +202,22 @@ async def run_with_trace(
     if deps is None:
         deps = AgentDeps(trace=Trace.new(question=question))
 
+    result = await _execute_agent(
+        question, agent=agent, deps=deps, today_iso=today_iso, settings=settings
+    )
+    _record_observation(result, observer)
+    return result
+
+
+async def _execute_agent(
+    question: str,
+    *,
+    agent: Agent[AgentDeps, str],
+    deps: AgentDeps,
+    today_iso: str | None,
+    settings: Settings,
+) -> AgentResult:
+    """Run the agent loop and build the AgentResult. See :func:`run_with_trace`."""
     prompt = render_question_with_context(question, today_iso=today_iso)
     started = time.perf_counter()
     try:
@@ -275,6 +298,18 @@ def _extract_usage(run_result: Any) -> dict[str, int | None]:
         if val is not None:
             out[field_name] = int(val)
     return out
+
+
+def _record_observation(result: AgentResult, observer: AgentObserver | None) -> None:
+    """Best-effort export of the completed run to the observability backend.
+
+    ``AgentObserver.record_run`` is contractually no-raise (see its docstring),
+    so this stays a thin dispatch — the ``enabled`` check just skips the work
+    cheaply when Langfuse is not configured.
+    """
+    obs = observer if observer is not None else get_observer()
+    if obs.enabled:
+        obs.record_run(result)
 
 
 # Forward-declare async helpers callers can await for trace-aware tool wrappers.

@@ -12,6 +12,8 @@ uv run pytest
 
 `uv sync` reads `pyproject.toml` and creates `.venv/`. Add `--all-extras` to include the `dev`, `eval`, and `deploy` optional groups.
 
+> **`uv` not on PATH?** On this project's dev machine `uv` was installed via `pip install --user uv`, which does not add it to PATH. Invoke it as a module instead: `python -m uv run pytest`. Add `--no-sync` (`python -m uv run --no-sync pytest`) to skip the dependency re-sync when the environment is already current — faster for repeated test runs.
+
 ## Layout
 
 ```

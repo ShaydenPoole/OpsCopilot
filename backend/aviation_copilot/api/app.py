@@ -7,6 +7,7 @@ directly with defaults from :mod:`aviation_copilot.config`.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any
@@ -18,10 +19,13 @@ from aviation_copilot.agent.core import AgentDeps, build_agent
 from aviation_copilot.api.rate_limit import DailyBudget, RateLimiter
 from aviation_copilot.api.routes import router
 from aviation_copilot.config import Settings, get_settings
+from aviation_copilot.observability import build_observer
 from aviation_copilot.tools import register_default_registrars
 
 if TYPE_CHECKING:
     from pydantic_ai import Agent
+
+logger = logging.getLogger("aviation_copilot.api")
 
 
 def create_app(
@@ -73,6 +77,13 @@ def create_app(
             app.state.agent = build_agent(settings=s, apply_tool_registrars=True)
         else:
             app.state.agent = agent
+        # Observability (U8): export agent runs to Langfuse when configured.
+        app.state.observer = build_observer(s)
+        if not app.state.observer.enabled and not s.test_mode:
+            logger.warning(
+                "Langfuse observability disabled — LANGFUSE_PUBLIC_KEY / "
+                "LANGFUSE_SECRET_KEY not set. Agent runs will not be traced."
+            )
         # Optional version manifests
         app.state.flight_data_version = _maybe_load_json(
             s.flight_duckdb_path.parent / "data_version.json"
@@ -86,6 +97,9 @@ def create_app(
             db = getattr(app.state, "flight_db", None)
             if db is not None and hasattr(db, "close"):
                 db.close()
+            observer = getattr(app.state, "observer", None)
+            if observer is not None:
+                observer.flush()
 
     app = FastAPI(
         title="Aviation Ops Copilot",
