@@ -1,0 +1,16 @@
+# Single-tool factual questions. The agent should call ONE tool and quote its output.
+{"id": "factual-001", "question": "What was the on-time arrival rate for ORD->LGA over July 2024?", "expected_tools": ["flight_data_query"]}
+{"id": "factual-002", "question": "How many flights between ATL and MCO were cancelled in Q3 2024?", "expected_tools": ["flight_data_query"]}
+{"id": "factual-003", "question": "What's the current METAR for KORD?", "expected_tools": ["weather_lookup"]}
+{"id": "factual-004", "question": "Are there any active NOTAMs for KJFK right now?", "expected_tools": ["notam_lookup"]}
+{"id": "factual-005", "question": "What does the FAA AIM say about Class B airspace VFR entry requirements?", "expected_tools": ["corpus_search"]}
+{"id": "factual-006", "question": "Show the TAF for KSFO.", "expected_tools": ["weather_lookup"]}
+{"id": "factual-007", "question": "What's the mean departure delay for SFO->SEA over the loaded data window?", "expected_tools": ["flight_data_query"]}
+{"id": "factual-008", "question": "Define minimum vectoring altitude per the AIM.", "expected_tools": ["corpus_search"]}
+{"id": "factual-009", "question": "Cancellation rate for American Airlines flights from ORD last year, please.", "expected_tools": ["flight_data_query"]}
+{"id": "factual-010", "question": "What's the procedure for radio communications failure under IFR?", "expected_tools": ["corpus_search"]}
+{"id": "factual-011", "question": "Get current METAR for KSEA.", "expected_tools": ["weather_lookup"]}
+{"id": "factual-012", "question": "Top destinations out of ORD by flight volume - what are they?", "expected_tools": ["flight_data_query"]}
+{"id": "factual-013", "question": "What does the AIM define as the standard instrument approach procedure phases?", "expected_tools": ["corpus_search"]}
+{"id": "factual-014", "question": "Any current NOTAMs at KDFW?", "expected_tools": ["notam_lookup"]}
+{"id": "factual-015", "question": "What's the mean arrival delay at KLAX in the loaded window?", "expected_tools": ["flight_data_query"]}

@@ -1,0 +1,11 @@
+# Multi-tool questions: agent must call 2+ tools.
+{"id": "multi-001", "question": "What's been driving delays into Newark over the past three months, and how does today's weather compare?", "expected_tools": ["flight_data_query", "weather_lookup"], "ae_id": "AE1"}
+{"id": "multi-002", "question": "Are there active NOTAMs at KORD that could affect arrivals, and what does historical data say about how runway closures there typically affect on-time rates?", "expected_tools": ["notam_lookup", "flight_data_query"]}
+{"id": "multi-003", "question": "Look up current METAR for KSEA and compare to typical conditions for this time of year per AIM weather sections.", "expected_tools": ["weather_lookup", "corpus_search"]}
+{"id": "multi-004", "question": "What's the current weather at KSFO, and are there NOTAMs we should know about?", "expected_tools": ["weather_lookup", "notam_lookup"]}
+{"id": "multi-005", "question": "Explain the delay-cause breakdown for ATL->MCO over the loaded window, and cite the AIM section that defines NAS delay.", "expected_tools": ["flight_data_query", "corpus_search"]}
+{"id": "multi-006", "question": "Given KJFK's current METAR and TAF, plus active NOTAMs, what's the operational picture for an arrival in the next 6 hours?", "expected_tools": ["weather_lookup", "notam_lookup"]}
+{"id": "multi-007", "question": "Cross-check the AIM definition of cancelled-vs-diverted flights with what we see in the BTS data for diverted flights in Q3.", "expected_tools": ["corpus_search", "flight_data_query"]}
+{"id": "multi-008", "question": "Pull NOTAMs for KBOS and the current METAR there.", "expected_tools": ["notam_lookup", "weather_lookup"]}
+{"id": "multi-009", "question": "How often did flights from SFO get NAS delays per the historical data, and what does the AIM say about NAS as a delay category?", "expected_tools": ["flight_data_query", "corpus_search"]}
+{"id": "multi-010", "question": "What's the on-time picture into KDEN this past week, and any active NOTAMs?", "expected_tools": ["flight_data_query", "notam_lookup"]}

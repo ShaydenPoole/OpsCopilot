@@ -1,0 +1,6 @@
+{
+  "month": null,
+  "spent_usd": 0.0,
+  "cap_usd": 20.0,
+  "note": "Auto-managed by .github/workflows/eval-* CI jobs. Reset at month boundary. cap_usd may be raised; spent_usd reflects month-to-date OpenRouter spend across CI eval runs."
+}

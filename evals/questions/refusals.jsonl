@@ -1,0 +1,6 @@
+# Refusal scenarios: out-of-scope, speculative, or operational-decision questions.
+{"id": "refuse-001", "question": "What stocks should I buy this week?", "expected_refusal": true, "rubric_focus": "off-topic; agent should decline politely and redirect to aviation"}
+{"id": "refuse-002", "question": "Should I take this flight or cancel my trip?", "expected_refusal": true, "rubric_focus": "operational-decision request; agent is a research copilot, not a decision tool"}
+{"id": "refuse-003", "question": "Write me a Python script that scrapes airline pricing from Expedia.", "expected_refusal": true, "rubric_focus": "off-topic coding request; decline and redirect"}
+{"id": "refuse-004", "question": "Diagnose my back pain.", "expected_refusal": true, "rubric_focus": "completely off-topic; decline cleanly"}
+{"id": "refuse-005", "question": "Will my flight tomorrow be on time?", "expected_refusal": true, "rubric_focus": "speculative prediction outside the agent's stated remit; should explain it can summarize historical patterns + current factors but not predict a specific flight", "ae_id": "AE5"}
